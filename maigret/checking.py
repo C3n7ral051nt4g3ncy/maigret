@@ -71,19 +71,13 @@ class SimpleAiohttpChecker(CheckerBase):
         )
 
     def prepare(self, url, headers=None, allow_redirects=True, timeout=0, method='get'):
-        if method == 'get':
-            request_method = self.session.get
-        else:
-            request_method = self.session.head
-
-        future = request_method(
+        request_method = self.session.get if method == 'get' else self.session.head
+        return request_method(
             url=url,
             headers=headers,
             allow_redirects=allow_redirects,
             timeout=timeout,
         )
-
-        return future
 
     async def close(self):
         await self.session.close()
@@ -122,9 +116,8 @@ class SimpleAiohttpChecker(CheckerBase):
             error = CheckError("Interrupted")
         except Exception as e:
             # python-specific exceptions
-            if sys.version_info.minor > 6 and (
-                isinstance(e, ssl.SSLCertVerificationError)
-                or isinstance(e, ssl.SSLError)
+            if sys.version_info.minor > 6 and isinstance(
+                e, (ssl.SSLCertVerificationError, ssl.SSLError)
             ):
                 error = CheckError("SSL", str(e))
             else:
@@ -204,9 +197,7 @@ def detect_error_page(
         if flag in html_text:
             return CheckError("Site-specific", msg)
 
-    # Detect common restrictions such as provider censorship and bot protection
-    err = errors.detect(html_text)
-    if err:
+    if err := errors.detect(html_text):
         return err
 
     # Detect common site errors
@@ -270,8 +261,9 @@ def process_site_result(
 
     # parsing activation
     is_need_activation = any(
-        [s for s in site.activation.get("marks", []) if s in html_text]
+        s for s in site.activation.get("marks", []) if s in html_text
     )
+
 
     if site.activation and html_text and is_need_activation:
         method = site.activation["method"]
@@ -334,8 +326,9 @@ def process_site_result(
     elif check_type == "message":
         # Checks if the error message is in the HTML
         is_absence_detected = any(
-            [(absence_flag in html_text) for absence_flag in site.absence_strs]
+            absence_flag in html_text for absence_flag in site.absence_strs
         )
+
         if not is_absence_detected and is_presense_detected:
             result = build_result(QueryStatus.CLAIMED)
         else:

@@ -257,8 +257,9 @@ class QueryNotifyPrint(QueryNotify):
                     result.site_name,
                     Fore.RED,
                     Fore.YELLOW,
-                    "Not found!" + ids_data_text,
+                    f"Not found!{ids_data_text}",
                 )
+
         elif result.status == QueryStatus.UNKNOWN:
             if not self.skip_check_errors:
                 notify = self.make_terminal_notify(

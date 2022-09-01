@@ -49,8 +49,7 @@ def notify_about_errors(search_results: QueryResultWrapper, query_notify):
         if not errors.is_important(e):
             continue
         text = f'Too many errors of type "{e["err"]}" ({round(e["perc"],2)}%)'
-        solution = errors.solution_of(e['err'])
-        if solution:
+        if solution := errors.solution_of(e['err']):
             text = '. '.join([text, solution.capitalize()])
 
         query_notify.warning(text, '!')
@@ -101,13 +100,12 @@ def extract_ids_from_results(results: QueryResultWrapper, db: MaigretDatabase) -
         if not dictionary:
             continue
 
-        new_usernames = dictionary.get('ids_usernames')
-        if new_usernames:
+        if new_usernames := dictionary.get('ids_usernames'):
             for u, utype in new_usernames.items():
                 ids_results[u] = utype
 
         for url in dictionary.get('ids_links', []):
-            ids_results.update(db.extract_ids_from_url(url))
+            ids_results |= db.extract_ids_from_url(url)
 
     return ids_results
 
